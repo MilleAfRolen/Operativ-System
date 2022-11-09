@@ -17,7 +17,9 @@ int fd[2];
 char *path = "/bin/ls";
 char *path2 = "/usr/bin/wc";
 
-int part1() {
+
+
+int main(int argc, char *argv[]) {
     int ret;
     if (pipe(fd) == -1) {
         printf("pipe error");
@@ -56,60 +58,5 @@ int part1() {
             exit(1);
         }
     }
-}
-
-int part2() {
-    char *my_mq = "/queue";
-    char ch;
-    char msg_ptr[1000];
-    FILE *ptr;
-    mqd_t mqd;
-    struct mq_attr attr;
-
-
-    pid_t pid = fork();
-    if (pid < 0) {
-        printf("Fork Error");
-    }
-   
-    if (pid == 0) {
-        //Child process 1 - Producer
-
-        mqd = mq_open(my_mq, O_WRONLY);
-        ptr = fopen("part2.txt", "r");
-        if(ptr == NULL) {
-            perror("Error opening file");
-            return(-1);
-        }
-
-        while(fscanf(ptr, "%s", msg_ptr) == 1) {
-            mq_send(mqd, msg_ptr, sizeof msg_ptr, 0);
-        }
-        fclose(ptr);
-       
-
-        mq_close(mqd);
-        
-    } else if (pid > 0) {
-        char buf[MAX_SIZE];
-        attr.mq_maxmsg = MAX_NUM_MSG;
-        attr.mq_msgsize = MAX_SIZE;
-        mqd = mq_open(my_mq, O_RDONLY | O_CREAT, &attr);
-
-        wait(NULL);
-        
-        mq_receive(mqd, buf, MAX_SIZE, NULL);
-        printf("Message: %s\n", buf);
-
-        mq_close(mqd);
-
-    }
-    return 0;
-}
-
-int main(int argc, char *argv[]) {
-    part2();
-
-
     return 0;
 }
