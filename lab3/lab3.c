@@ -64,6 +64,7 @@ int main(void) {
     int page_table[256];
     int page_ptr = 0;
     long physical;
+    int pageCounter = 0;
 
     int missCounter = 0;
     int hitCounter = 0;
@@ -113,6 +114,7 @@ int main(void) {
             if(page_table[page_num] == -1) {
                 page_table[page_num] = page_ptr;
                 page_ptr += 256;
+                pageCounter++;
             }
 
             physical = page_table[page_num] + page_offset;
@@ -133,18 +135,10 @@ int main(void) {
             number, physical, buffer);
     }
 
-     printf("TLB miss counter: %d\nTLB hit counter: %d\n", missCounter, hitCounter);
+     printf("TLB misses: %d\nTLB hits: %d\nPage Faults: %d\n", missCounter, hitCounter, pageCounter);
 
     fclose(address_ptr);
     fclose(backing_ptr);
-
-
-
-
-    if (reader) {
-        free(reader);
-    }
-
 
     return 0;
 }
