@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+typedef signed char BYTE;
 
 typedef struct node {
     struct node *next;
@@ -44,9 +45,11 @@ void insert(int page, long physicalAddr) {
 void pop() {
     node *temp = tlb_queue.tail -> prev;
     temp -> next = NULL;
+    //free(tlb_queue.tail);
     tlb_queue.tail = temp;
-    tlb_queue.size--;
+    tlb_queue.size--;    
 }
+
 
 int main(void) {
     FILE *address_ptr, *backing_ptr, *file_ptr;
@@ -87,26 +90,26 @@ int main(void) {
     }
 
     while (read = (getline(&reader, &size, address_ptr)) != -1) {
-
+        hit = false;
         //read page number
         number = strtol(reader, &char_ptr, 10);
         page_offset = number & getOffset;
         page_num = (number & mask) >> 8;
-
-        node *temp = tlb_queue.head;
-        for (int i = 0; tlb_queue.size; i++) {
-            if (temp->page_num == page_num) {
-                physical = temp->physical + page_offset;
-                hitCounter++;
+        
+        node *current = tlb_queue.head;
+        for(int i = 0; i < tlb_queue.size; i++){
+            if(current->page_num == page_num){
+                physical = current->physical + page_offset;
                 hit = true;
-                break;
+                hitCounter++;
+                break;  
             }
-            temp = temp-> next;
+            current = current->next;
         }
+        
 
         if (!hit) {
             missCounter++;
-
             if(page_table[page_num] == -1) {
                 page_table[page_num] = page_ptr;
                 page_ptr += 256;
@@ -117,19 +120,20 @@ int main(void) {
             if(tlb_queue.size == 16) {
                 pop();
             }
-            printf("HEJ");
             insert(page_num, page_table[page_num]);
         }
 
         fseek(backing_ptr, physical, SEEK_SET);
 
-        char buffer;
+        BYTE buffer;
         size_t bytes_read = 0;
-        bytes_read = fread(&buffer, sizeof(char), 1, backing_ptr);
+        bytes_read = fread(&buffer, sizeof(BYTE), 1, backing_ptr);
 
         fprintf(file_ptr ,"Virtual address: %d Physical address: %ld Value: %d\n", 
             number, physical, buffer);
     }
+
+     printf("TLB miss counter: %d\nTLB hit counter: %d\n", missCounter, hitCounter);
 
     fclose(address_ptr);
     fclose(backing_ptr);
@@ -137,7 +141,9 @@ int main(void) {
 
 
 
-
+    if (reader) {
+        free(reader);
+    }
 
 
     return 0;
